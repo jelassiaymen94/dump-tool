@@ -1,49 +1,49 @@
-# FiveM 服务器 Dump 工具
+# FiveM Server Dump Tool
 
-用于对 FiveM 服务器资源执行 Dump，并对已 Dump 的 FXAP 资源进行解密。
+Dumps FiveM server resources and decrypts FXAP resources that have been dumped.
 
-## 功能范围
+## Scope
 
-- 包含：服务器 Dump
-- 包含：FXAP 解密
-- 可选：仅对本次已解密的 FXAP 资源生成完整副本，并对副本执行模型修复
+- Included: server dump
+- Included: FXAP decryption
+- Optional: generate a complete copy only for the FXAP resources decrypted in this run, and run model repair on the copy
 
-## 环境要求
+## Requirements
 
 - Windows 10 / Windows 11
-- Python 3.7 或更高版本
-- Java 8 或更高版本（推荐 Java 17，用于运行 `unluac54.jar`）
-- 可选模型修复需要 .NET 8 Runtime
-- FiveM 已安装并已进入目标服务器
-- 需要读取 FiveM 进程 token 时，建议以管理员身份运行
+- Python 3.7 or later
+- Java 8 or later (Java 17 recommended, used to run `unluac54.jar`)
+- .NET 8 Runtime for the optional model repair
+- FiveM installed and already connected to the target server
+- Running as administrator is recommended when the FiveM process token must be read
 
-## 安装
+## Installation
 
-1. 下载或克隆本仓库。
-2. 进入项目目录。
-3. 运行 `install.bat` 安装依赖。
+1. Download or clone this repository.
+2. Enter the project directory.
+3. Run `install.bat` to install the dependencies.
 
-也可以手动安装依赖：
+You can also install the dependencies manually:
 
 ```bat
 pip install -r requirements.txt
 ```
 
-Lua 5.4 反编译依赖 Java。程序会依次检测 `--java` 指定位置、`JAVA_HOME` 和系统 `PATH`；没有可用 Java 时会在 Dump 前直接停止，不会再把未反编译的字节码误写成 `.lua`。
+Lua 5.4 decompilation depends on Java. The program checks in order the location specified by `--java`, `JAVA_HOME`, and the system `PATH`; if no usable Java is available, it stops before the dump instead of mistakenly writing undecompiled bytecode as `.lua`.
 
-推荐安装 Eclipse Temurin Java 17 JRE：
+Installing Eclipse Temurin Java 17 JRE is recommended:
 
 https://adoptium.net/temurin/releases/?version=17&os=windows&arch=x64&package=jre
 
-## 使用
+## Usage
 
-交互模式：
+Interactive mode:
 
 ```bat
 python auto.py
 ```
 
-直接传入目标地址：
+Passing the target address directly:
 
 ```bat
 python auto.py https://cfx.re/join/xxxx --token-choice 1
@@ -57,66 +57,66 @@ python auto.py --resume-session "C:\path\to\session.json" --non-interactive
 python auto.py --auto-target --token-choice 1 --list-resources --non-interactive
 ```
 
-非交互模式，供 CK 工具箱调用：
+Non-interactive mode, for use by the CK toolbox:
 
 ```bat
 python auto.py 1.2.3.4:30120 --token-choice 1 --resources all --output Output --report Output\_server_dump_report.json --non-interactive
 ```
 
-`token_choice` 默认值为 `1`，表示自动扫描 FiveM 进程中的 token。需要手动 token 时可使用：
+The default value of `token_choice` is `1`, which means automatically scanning the token from the FiveM process. To provide a manual token, use:
 
 ```bat
 python auto.py 1.2.3.4:30120 --token-choice 2 --token YOUR_TOKEN
 ```
 
-## 两步资源选择
+## Two-step resource selection
 
-只获取服务器资源清单，不创建输出或执行 Dump：
+List the server resources only, without creating output or running a dump:
 
 ```bat
 python auto.py 1.2.3.4:30120 --token-choice 1 --list-resources --non-interactive
 ```
 
-正式 Dump 支持序号、精确资源名以及 `*`、`?` 通配符，多个条件用逗号分隔：
+A full dump accepts indices, exact resource names, and the `*` and `?` wildcards; separate multiple conditions with commas:
 
 ```bat
 python auto.py 1.2.3.4:30120 --token-choice 1 --resources "esx_*,qb-*" --non-interactive
 ```
 
-不传 `--resources` 且使用交互模式时，程序会在获取清单后显示编号菜单，预览匹配结果并要求确认。CK 工具箱使用独立的“获取资源清单”步骤，在菜单确认后通过 `--resources-file` 将精确资源名传给正式 Dump。
+When `--resources` is not passed and interactive mode is used, the program displays a numbered menu after fetching the list, previews the matches, and asks for confirmation. The CK toolbox uses a separate "fetch resource list" step and, after menu confirmation, passes the exact resource names to the full dump through `--resources-file`.
 
-## 输出
+## Output
 
-- 解密后的文件默认写入 `Output`
-- JSON 报告默认写入 `Output\_server_dump_report.json`
-- Markdown 报告默认写入 `Output\_server_dump_report.md`
-- 报告会记录实际 Java 路径、版本以及 Lua 反编译失败明细
-- `unluac54.jar` 失败时保留 `.luac` 字节码和错误文件，不再伪装成解密成功的 `.lua`
-- 执行过程中会输出 `CK_PROGRESS` 进度事件，供 CK 工具箱实时显示
-- 资源文件下载遇到 HTTP 403、404、408、409、425、429、常见 5xx、连接中断或超时时，会进行最多 4 次请求（首次 + 3 次重试），采用受限退避并尊重数字形式的 `Retry-After`
-- 每次重试、重试成功和最终失败都会写入日志；JSON/Markdown 报告会逐项记录最终未下载成功的资源名、文件名、HTTP 状态码、尝试次数和失败原因
-- `--no-fxap-decrypt` 不执行 FXAP 解密，也不要求 Java；每个资源下载并解包后，会在临时目录清理前把 `.fxap`、加密文件、脚本及所有子目录按原结构完整复制到输出目录
-- 默认下载资源 `stream` 目录下的文件；`--no-download-stream` 会跳过 stream 文件下载
-- `--no-fxap-decrypt` 不能与 `--vertex-fix` 同时使用；模型修复只适用于成功解密后的副本
-- `--retry-failed-report` 读取上一次 JSON 报告，只选择其中 `failed_downloads` 和等待解密前置文件的项目重新下载，并合并回报告记录的原输出目录；新报告可以继续用于下一轮补充
-- Dump 会在任务目录保存 `session.json`；连接中断后工具箱显示“继续 Dump”，重新进入游戏后点击即可重新扫描 token 并跳过已经完成的资源。未完成文件使用 `.part` 临时文件，继续时重新下载。
-- `--wait-for-game --status-file <path>` 会在没有 FiveM token 或连接中断时等待并自动用 `--resume-session` 继续；状态文件记录当前阶段、百分比、提示、报告路径和已完成资源数，供工具箱显示静默 Dump 进度。
-- `--auto-target` 会在目标地址为空时扫描当前 FiveM 进程和内存候选，并使用当前 Token 请求 `/client` 的 `getConfiguration` 验证；只有返回有效 `resources` 配置的地址才会进入 Dump。
-- 静默 Dump 通过 `--resources` 直接使用资源匹配表达式（例如 `aaa*`），不会弹出资源选择窗口；下载完成但仍有失败文件时，报告可以继续交给 `--retry-failed-report` 补充下载。
-- 选择“开始服务器 Dump”会创建新的任务，不会接管之前暂停的任务；旧任务状态和已完成输出会保留。
-- 解密模式补充 stream/普通文件时会额外下载该资源必要的 RPF/`.fxap` 上下文，否则无法安全解密；已经成功且不是解密前置的文件不会重复下载
-- 补充下载不会自动执行模型修复；它只更新原解密输出或原始保留输出，避免覆盖已有的模型修复副本
-- 旧报告中的资源如果已从服务器移除或改名，会标记为 `unavailable` 并保留到下一轮；其他仍存在的资源会继续补充，不会再被少数缺失资源整体阻断
-- `--vertex-fix` 只处理本次确认含 `.fxap` 且已完成解密的资源；原解密目录不会被覆盖
-- 模型修复会在原输出目录同级创建“原目录名_模型修复”，复制每个符合条件资源的完整目录后再处理副本；同名目录已存在时自动使用时间戳新目录
+- Decrypted files are written to `Output` by default
+- The JSON report is written to `Output\_server_dump_report.json` by default
+- The Markdown report is written to `Output\_server_dump_report.md` by default
+- The report records the actual Java path and version, as well as details of Lua decompilation failures
+- When `unluac54.jar` fails, the `.luac` bytecode and the error file are kept instead of disguising them as a successfully decrypted `.lua`
+- `CK_PROGRESS` progress events are emitted during execution so the CK toolbox can display progress in real time
+- When a resource file download encounters HTTP 403, 404, 408, 409, 425, 429, common 5xx errors, a dropped connection, or a timeout, up to 4 requests are made (initial attempt + 3 retries), with bounded backoff and a numeric `Retry-After` honored
+- Every retry, successful retry, and final failure is written to the log; the JSON/Markdown reports record, item by item, the resource name, file name, HTTP status code, attempt count, and failure reason of every download that ultimately failed
+- `--no-fxap-decrypt` skips FXAP decryption and does not require Java; after each resource is downloaded and unpacked, the `.fxap` files, encrypted files, scripts, and all subdirectories are copied to the output directory with their original structure before the temporary directory is cleaned up
+- Files under each resource's `stream` directory are downloaded by default; `--no-download-stream` skips stream file downloads
+- `--no-fxap-decrypt` cannot be used together with `--vertex-fix`; model repair only applies to successfully decrypted copies
+- `--retry-failed-report` reads the previous JSON report, selects only the items in its `failed_downloads` and those waiting for decryption prerequisites for re-download, and merges them back into the original output directory recorded in the report; the new report can be used for another round of supplementary downloads
+- A dump saves `session.json` in the task directory; after a connection interruption, the toolbox shows "Resume Dump", and clicking it after re-entering the game re-scans the token and skips resources already completed. Unfinished files use `.part` temporary files and are downloaded again when resumed
+- `--wait-for-game --status-file <path>` waits when there is no FiveM token or when the connection is interrupted, and automatically resumes with `--resume-session`; the status file records the current stage, percentage, message, report path, and number of completed resources so the toolbox can display silent dump progress
+- `--auto-target` scans the current FiveM process and memory candidates when the target address is empty, and verifies them by requesting `/client`'s `getConfiguration` with the current token; only addresses that return a valid `resources` configuration proceed to the dump
+- A silent dump uses a resource matcher expression directly through `--resources` (for example `aaa*`) and does not open the resource selection window; when downloads finish but some files still failed, the report can be passed to `--retry-failed-report` for supplementary downloads
+- Choosing "start server dump" creates a new task and does not take over a previously paused task; the old task's state and completed output are preserved
+- In decryption mode, supplementary stream/normal file downloads also fetch the RPF/`.fxap` context that the resource needs; otherwise it cannot be decrypted safely. Files that already succeeded and are not decryption prerequisites are not downloaded again
+- Supplementary downloads do not automatically run model repair; they only update the original decrypted output or the raw preserved output, so existing model-repaired copies are not overwritten
+- If a resource in an old report has been removed from the server or renamed, it is marked as `unavailable` and kept for the next round; other resources that still exist continue to be supplemented, so a few missing resources no longer block the whole run
+- `--vertex-fix` only processes resources that are confirmed to contain `.fxap` in this run and have already been decrypted; the original decrypted directory is not overwritten
+- Model repair creates a sibling directory named `<original directory name>_模型修复` (the original directory name plus `_模型修复`, Chinese for "model repair"), copies the complete directory of each eligible resource, and then processes the copy; if a directory with that name already exists, a new one with a timestamp is used automatically
 
-## 注意事项
+## Notes
 
-- 请只在你有权限分析的服务器或资源上使用。
-- Dump 中途关闭 FiveM 后，重新进入目标服务器并使用任务状态继续；不要删除任务目录中的 `session.json`。
-- 如果自动扫描 token 失败，请确认 FiveM 已进入服务器，或以管理员身份运行。
-- 杀毒软件可能会根据本机策略对进程读取或打包工具提示风险。
+- Use this only on servers or resources you have permission to analyze.
+- If FiveM is closed during a dump, re-enter the target server and continue using the task state; do not delete `session.json` in the task directory.
+- If automatic token scanning fails, confirm that FiveM has entered the server, or run as administrator.
+- Antivirus software may flag process reading or the packer tool as risky, depending on local policy.
 
-## 免责声明
+## Disclaimer
 
-本项目仅用于学习、研究和授权场景。因误用造成的后果由使用者自行承担。
+This project is intended for learning, research, and authorized scenarios only. Users are solely responsible for the consequences of misuse.
